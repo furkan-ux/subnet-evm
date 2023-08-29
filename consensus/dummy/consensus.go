@@ -282,7 +282,7 @@ func (self *DummyEngine) verifyBlockFee(
 	if self.consensusMode.ModeSkipBlockFee {
 		return nil
 	}
-	if baseFee == nil || baseFee.Sign() <= 0 {
+	if baseFee == nil || baseFee.Sign() < 0 {
 		return fmt.Errorf("invalid base fee (%d) in SubnetEVM", baseFee)
 	}
 	if requiredBlockGasCost == nil || !requiredBlockGasCost.IsUint64() {
@@ -316,8 +316,8 @@ func (self *DummyEngine) verifyBlockFee(
 	}
 	// Calculate how much gas the [totalBlockFee] would purchase at the price level
 	// set by the base fee of this block.
-	blockGas := new(big.Int).Div(totalBlockFee, baseFee)
-
+	//blockGas := new(big.Int).Div(totalBlockFee, baseFee)
+	blockGas := big.NewInt(0)
 	// Require that the amount of gas purchased by the effective tips within the block, [blockGas],
 	// covers at least [requiredBlockGasCost].
 	//

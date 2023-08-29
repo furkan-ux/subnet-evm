@@ -1,5 +1,5 @@
 ./main
-
+x.bin
 *.log
 *~
 .DS_Store

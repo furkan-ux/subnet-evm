@@ -104,7 +104,7 @@ func CalcBaseFee(config *params.ChainConfig, feeConfig commontype.FeeConfig, par
 
 	baseFee = selectBigWithinBounds(feeConfig.MinBaseFee, baseFee, nil)
 
-	return newRollupWindow, baseFee, nil
+	return newRollupWindow, big.NewInt(0).Set(baseFee), nil
 }
 
 // EstiamteNextBaseFee attempts to estimate the next base fee based on a block with [parent] being built at
@@ -237,7 +237,7 @@ func calcBlockGasCost(
 	if !blockGasCost.IsUint64() {
 		blockGasCost = new(big.Int).SetUint64(math.MaxUint64)
 	}
-	return blockGasCost
+	return big.NewInt(0).Set(blockGasCost)
 }
 
 // MinRequiredTip is the estimated minimum tip a transaction would have

@@ -224,6 +224,7 @@ func (w *worker) createCurrentEnvironment(predicateContext *precompileconfig.Pre
 	if err != nil {
 		return nil, err
 	}
+	header.Number = new(big.Int).Add(parent.Number, big.NewInt(1))
 	return &environment{
 		signer:           types.MakeSigner(w.chainConfig, header.Number, header.Time),
 		state:            state,

@@ -1,0 +1,44 @@
+{
+  "config": {
+    "byzantiumBlock": 0,
+    "chainId": 9119,
+    "constantinopleBlock": 0,
+    "eip150Block": 0,
+    "eip150Hash": "0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0",
+    "eip155Block": 0,
+    "eip158Block": 0,
+    "feeConfig": {
+      "gasLimit": 8000000000,
+      "targetBlockRate": 1,
+      "minBaseFee": 0,
+      "targetGas": 1000000,
+      "baseFeeChangeDenominator": 1,
+      "minBlockGasCost": 0,
+      "maxBlockGasCost": 1000000,
+      "blockGasCostStep": 200000
+    },
+    "homesteadBlock": 0,
+    "istanbulBlock": 0,
+    "muirGlacierBlock": 0,
+    "petersburgBlock": 0,
+    "subnetEVMTimestamp": 0
+  },
+  "nonce": "0x0",
+  "timestamp": "0x0",
+  "extraData": "0x",
+  "gasLimit": "8000000000",
+  "difficulty": "0x0",
+  "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "coinbase": "0x0000000000000000000000000000000000000000",
+  "alloc": {
+    "6586693f6f3bb602f4eea7539259ac22d350a6b6": {
+      "balance": "0x4ee2d6d415b85acef8100000000"
+    }
+  },
+  "airdropHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "airdropAmount": null,
+  "number": "0x0",
+  "gasUsed": "0x0",
+  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "baseFeePerGas": null
+}
