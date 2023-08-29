@@ -1,4 +1,4 @@
-# Subnet EVM
+# Subnet EVM: 0 Gas Transaction Acceptance
 
 [![Build + Test + Release](https://github.com/ava-labs/subnet-evm/actions/workflows/lint-tests-release.yml/badge.svg)](https://github.com/ava-labs/subnet-evm/actions/workflows/lint-tests-release.yml)
 [![CodeQL](https://github.com/ava-labs/subnet-evm/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/ava-labs/subnet-evm/actions/workflows/codeql-analysis.yml)
