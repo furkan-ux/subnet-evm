@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	allowedFutureBlockTime = 10 * time.Second // Max time from current time allowed for blocks, before they're considered future blocks
+	allowedFutureBlockTime = 10 * time.Second // Max time from current time allowed for blocks, before they're considered future blocks //FURKAN
 
 	errInvalidBlockTime     = errors.New("timestamp less than parent's")
 	errUnclesUnsupported    = errors.New("uncles unsupported")

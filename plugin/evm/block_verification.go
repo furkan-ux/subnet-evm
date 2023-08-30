@@ -107,9 +107,9 @@ func (v blockValidator) SyntacticVerify(b *Block, rules params.Rules) error {
 	}
 	// Block must not be empty
 	txs := b.ethBlock.Transactions()
-	if len(txs) == 0 {
-		return errEmptyBlock
-	}
+	// if len(txs) == 0 {
+	// 	return errEmptyBlock
+	// }
 
 	if !rules.IsSubnetEVM {
 		// Make sure that all the txs have the correct fee set.
