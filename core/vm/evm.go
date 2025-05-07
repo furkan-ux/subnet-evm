@@ -140,6 +140,10 @@ func (b *BlockContext) Timestamp() uint64 {
 	return b.Time
 }
 
+func (b *BlockContext) GetBlockHash(number uint64) common.Hash {
+	return b.GetHash(number)
+}
+
 func (b *BlockContext) GetPredicateResults(txHash common.Hash, address common.Address) []byte {
 	if b.PredicateResults == nil {
 		return nil
