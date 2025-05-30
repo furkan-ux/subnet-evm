@@ -15,8 +15,9 @@ import (
 
 // Gas costs for stateful precompiles
 const (
-	WriteGasCostPerSlot = 1_000
-	ReadGasCostPerSlot  = 500
+	// WriteGasCostPerSlot = 1_000
+	WriteGasCostPerSlot = 1
+	ReadGasCostPerSlot  = 1
 
 	// Per LOG operation.
 	LogGas uint64 = 375 // from params/protocol_params.go
