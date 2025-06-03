@@ -8,6 +8,7 @@ import (
 	"math/big"
 
 	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/dhe-core/hpbfv"
 	"github.com/ava-labs/subnet-evm/precompile/precompileconfig"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/holiman/uint256"
@@ -50,6 +51,15 @@ type AccessibleState interface {
 	GetBlockContext() BlockContext
 	GetSnowContext() *snow.Context
 	GetChainConfig() precompileconfig.ChainConfig
+
+	// For DHEVM Precompile
+	LoadCiphertext(ciphertextId common.Hash) (*hpbfv.Ciphertext, error)
+	Load2Ciphertexts(cId1, cId2 common.Hash) ([]*hpbfv.Ciphertext, error)
+
+	StoreCiphertext(ciphertext *hpbfv.Ciphertext)
+
+	IsEthCall() bool
+	IsCommitting() bool
 }
 
 // ConfigurationBlockContext defines the interface required to configure a precompile.

@@ -32,6 +32,7 @@ import (
 	"sync/atomic"
 
 	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/dhe-core/hpbfv"
 	"github.com/ava-labs/subnet-evm/constants"
 	"github.com/ava-labs/subnet-evm/core/types"
 	"github.com/ava-labs/subnet-evm/params"
@@ -195,6 +196,11 @@ type EVM struct {
 	// available gas is calculated in gasCall* according to the 63/64 rule and later
 	// applied in opCall*.
 	callGasTemp uint64
+	// custom storage for the DHEVM ciphertexts
+	dhevmStorage *DHEvmStorage
+
+	isEthCall       bool
+	isGasEstimation bool
 }
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
@@ -211,6 +217,7 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig
 			blockCtx.BlobBaseFee = new(big.Int)
 		}
 	}
+
 	evm := &EVM{
 		Context:     blockCtx,
 		TxContext:   txCtx,
@@ -220,6 +227,7 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig
 		chainRules:  chainConfig.Rules(blockCtx.BlockNumber, blockCtx.Time),
 	}
 	evm.interpreter = NewEVMInterpreter(evm)
+	evm.dhevmStorage = NewDHEvmStorage(evm)
 
 	// If the predicate results were set by the miner, use them.
 	if blockCtx.PredicateResults != nil {
@@ -646,6 +654,11 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 // Create creates a new contract using code as deployment code.
 func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
 	contractAddr = crypto.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
+	// create the DHEvmStorage  if it doesn't exist
+	if evm.StateDB.GetNonce(DHEvmStorageAddress) == 0 {
+		evm.StateDB.CreateAccount(DHEvmStorageAddress)
+		evm.StateDB.SetNonce(DHEvmStorageAddress, 1)
+	}
 	return evm.create(caller, &codeAndHash{code: code}, gas, value, contractAddr, CREATE)
 }
 
@@ -656,6 +669,12 @@ func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *uint2
 func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *uint256.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
 	codeAndHash := &codeAndHash{code: code}
 	contractAddr = crypto.CreateAddress2(caller.Address(), salt.Bytes32(), codeAndHash.Hash().Bytes())
+
+	// create the DHEvmStorage if it doesn't exist
+	if evm.StateDB.GetNonce(DHEvmStorageAddress) == 0 {
+		evm.StateDB.CreateAccount(DHEvmStorageAddress)
+		evm.StateDB.SetNonce(DHEvmStorageAddress, 1)
+	}
 	return evm.create(caller, codeAndHash, gas, endowment, contractAddr, CREATE2)
 }
 
@@ -664,3 +683,36 @@ func (evm *EVM) ChainConfig() *params.ChainConfig { return evm.chainConfig }
 
 // GetChainConfig implements AccessibleState
 func (evm *EVM) GetChainConfig() precompileconfig.ChainConfig { return evm.chainConfig }
+
+// GetLoadedCiphertexts implements AccessibleState
+func (evm *EVM) GetLoadedCiphertexts() map[common.Hash]*hpbfv.Ciphertext {
+	return evm.dhevmStorage.GetLoadedCiphertexts()
+}
+
+// // AddCiphertext implements AccessibleState
+// func (evm *EVM) AddCiphertext(ciphertext *hpbfv.Ciphertext) {
+// 	evm.dhevmStorage.AddCiphertext(ciphertext)
+// }
+
+func (evm *EVM) IsEthCall() bool {
+	return evm.interpreter.evm.isEthCall
+}
+
+func (evm *EVM) IsCommitting() bool {
+	return !evm.interpreter.evm.isGasEstimation
+}
+
+// LoadCiphertext implements AccessibleState
+func (evm *EVM) LoadCiphertext(ciphertextId common.Hash) (*hpbfv.Ciphertext, error) {
+	return evm.dhevmStorage.loadCiphertext(ciphertextId)
+}
+
+// Load2Ciphertexts implements AccessibleState
+func (evm *EVM) Load2Ciphertexts(cId1, cId2 common.Hash) ([]*hpbfv.Ciphertext, error) {
+	return evm.dhevmStorage.load2Ciphertexts(cId1, cId2)
+}
+
+// StoreCiphertext implements AccessibleState
+func (evm *EVM) StoreCiphertext(ciphertext *hpbfv.Ciphertext) {
+	evm.dhevmStorage.insertCiphertextToStorage(ciphertext)
+}
