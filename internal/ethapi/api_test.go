@@ -2117,4 +2117,17 @@ func TestRPCDhevm(t *testing.T) {
 	// IsGasEstimation should be false
 	require.True(t, backend.lastVmConfig.IsEthCall)
 	require.False(t, backend.lastVmConfig.IsGasEstimation)
+
+	// Testing eth_estimateGas is a bit tricky.
+	// Unlike eth_call, which routes EVM creation through the testBackend (allowing us to spy on the VM config),
+	// eth_estimateGas constructs and runs the EVM directly inside the gas estimator package.
+	// This bypasses the backend's EVM factory, so we cannot intercept or inspect the EVM configuration
+	// (such as IsGasEstimation or IsEthCall flags) from the test backend.
+	// As a result, verifying internal EVM config flags for gas estimation would require modifying
+	// production code to add test hooks, which is generally undesirable.
+	// Therefore, we rely on code review and logic inspection to ensure the flags are set correctly.
+	//
+	// api.EstimateGas(context.Background(), suite.call, &rpc.BlockNumberOrHash{BlockNumber: &suite.blockNumber}, nil)
+	// require.True(t, backend.lastVmConfig.IsGasEstimation)
+	// require.False(t, backend.lastVmConfig.IsEthCall)
 }
