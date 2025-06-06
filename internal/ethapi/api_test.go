@@ -441,6 +441,9 @@ type testBackend struct {
 	chain  *core.BlockChain
 	accman *accounts.Manager
 	acc    accounts.Account
+
+	// DHEVM
+	lastVmConfig vm.Config // spy for the last vm config for checking if the vm is eth call or gas estimation
 }
 
 func newTestBackend(t *testing.T, n int, gspec *core.Genesis, engine consensus.Engine, generator func(i int, b *core.BlockGen)) *testBackend {
@@ -559,7 +562,10 @@ func (b testBackend) GetReceipts(ctx context.Context, hash common.Hash) (types.R
 	receipts := rawdb.ReadReceipts(b.db, hash, header.Number.Uint64(), header.Time, b.chain.Config())
 	return receipts, nil
 }
-func (b testBackend) GetEVM(ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockContext *vm.BlockContext) *vm.EVM {
+func (b *testBackend) GetEVM(ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockContext *vm.BlockContext) *vm.EVM {
+	// spy the vm config
+	b.lastVmConfig = *vmConfig
+
 	if vmConfig == nil {
 		vmConfig = b.chain.GetVMConfig()
 	}
@@ -2063,4 +2069,65 @@ func testRPCResponseWithFile(t *testing.T, testid int, result interface{}, rpc s
 		t.Fatalf("error reading expected test file: %s output: %v", outputFile, err)
 	}
 	require.JSONEqf(t, string(want), string(data), "test %d: json not match, want: %s, have: %s", testid, string(want), string(data))
+}
+
+func TestRPCDhevm(t *testing.T) {
+	t.Parallel()
+
+	var (
+		// 1. will to a estimate gas call and check if the vm config is correct
+		acc1Key, _ = crypto.HexToECDSA("8a1f9a8f95be41cd7ccb6168179afb4504aefe388d1e14474d32c45c72ce7b7a")
+		acc2Key, _ = crypto.HexToECDSA("49a7b37aa6f6645917e7b807e9d1c00d4fa71f18343b0d4122a4d2df64dd6fee")
+
+		acc1Addr = crypto.PubkeyToAddress(acc1Key.PublicKey)
+		acc2Addr = crypto.PubkeyToAddress(acc2Key.PublicKey)
+
+		genesis = &core.Genesis{
+			Config: params.TestChainConfig,
+			Alloc: types.GenesisAlloc{
+				acc1Addr: {Balance: big.NewInt(params.Ether)},
+				acc2Addr: {Balance: big.NewInt(params.Ether)},
+			},
+		}
+
+		genBlocks = 10
+	)
+
+	backend := newTestBackend(t, genBlocks, genesis, dummy.NewCoinbaseFaker(), func(i int, b *core.BlockGen) {
+		// b.SetPoS()
+	})
+	api := NewBlockChainAPI(backend)
+
+	var suite = struct {
+		blockNumber rpc.BlockNumber
+		call        TransactionArgs
+	}{
+		blockNumber: rpc.LatestBlockNumber,
+		call: TransactionArgs{
+			From:  &acc1Addr,
+			Input: hex2Bytes("6080604052348015600f57600080fd5b50483a1015601c57600080fd5b60003a111560315760004811603057600080fd5b5b603f80603e6000396000f3fe6080604052600080fdfea264697066735822122060729c2cee02b10748fae5200f1c9da4661963354973d9154c13a8e9ce9dee1564736f6c63430008130033"),
+		},
+	}
+	_, err := api.Call(context.Background(), suite.call, &rpc.BlockNumberOrHash{BlockNumber: &suite.blockNumber}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to call: %v\n", err)
+	}
+
+	// IsEthCall should be true
+	// IsGasEstimation should be false
+	require.True(t, backend.lastVmConfig.IsEthCall)
+	require.False(t, backend.lastVmConfig.IsGasEstimation)
+
+	// Testing eth_estimateGas is a bit tricky.
+	// Unlike eth_call, which routes EVM creation through the testBackend (allowing us to spy on the VM config),
+	// eth_estimateGas constructs and runs the EVM directly inside the gas estimator package.
+	// This bypasses the backend's EVM factory, so we cannot intercept or inspect the EVM configuration
+	// (such as IsGasEstimation or IsEthCall flags) from the test backend.
+	// As a result, verifying internal EVM config flags for gas estimation would require modifying
+	// production code to add test hooks, which is generally undesirable.
+	// Therefore, we rely on code review and logic inspection to ensure the flags are set correctly.
+	//
+	// api.EstimateGas(context.Background(), suite.call, &rpc.BlockNumberOrHash{BlockNumber: &suite.blockNumber}, nil)
+	// require.True(t, backend.lastVmConfig.IsGasEstimation)
+	// require.False(t, backend.lastVmConfig.IsEthCall)
 }

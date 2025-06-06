@@ -529,7 +529,19 @@ func opSstore(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]b
 	}
 	loc := scope.Stack.pop()
 	val := scope.Stack.pop()
-	interpreter.evm.StateDB.SetState(scope.Contract.Address(), loc.Bytes32(), val.Bytes32())
+	newValueHash := common.Hash(val.Bytes32())
+	oldValueHash := interpreter.evm.StateDB.GetState(scope.Contract.Address(), loc.Bytes32())
+
+	// if the value is the same or if we are not going to commit
+	if newValueHash != oldValueHash && interpreter.evm.IsCommitting() {
+		ct := interpreter.evm.dhevmStorage.GetCiphertextFromMemory(newValueHash)
+		if ct != nil {
+			interpreter.evm.dhevmStorage.insertCiphertextToStorage(ct)
+		}
+	}
+
+	// set the SSTORE's value in the actual contract
+	interpreter.evm.StateDB.SetState(scope.Contract.Address(), loc.Bytes32(), newValueHash)
 	return nil, nil
 }
 
