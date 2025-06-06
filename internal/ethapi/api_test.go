@@ -562,7 +562,7 @@ func (b testBackend) GetReceipts(ctx context.Context, hash common.Hash) (types.R
 	receipts := rawdb.ReadReceipts(b.db, hash, header.Number.Uint64(), header.Time, b.chain.Config())
 	return receipts, nil
 }
-func (b testBackend) GetEVM(ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockContext *vm.BlockContext) *vm.EVM {
+func (b *testBackend) GetEVM(ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockContext *vm.BlockContext) *vm.EVM {
 	// spy the vm config
 	b.lastVmConfig = *vmConfig
 
@@ -2089,35 +2089,32 @@ func TestRPCDhevm(t *testing.T) {
 				acc2Addr: {Balance: big.NewInt(params.Ether)},
 			},
 		}
-		signer = types.HomesteadSigner{}
 
 		genBlocks = 10
 	)
 
 	backend := newTestBackend(t, genBlocks, genesis, dummy.NewCoinbaseFaker(), func(i int, b *core.BlockGen) {
-		// Transfer from account[0] to account[1]
-		//    value: 1000 wei
-		//    fee:   0 wei
-		tx, _ := types.SignTx(types.NewTx(&types.LegacyTx{Nonce: uint64(i), To: &acc2Addr, Value: big.NewInt(1000), Gas: params.TxGas, GasPrice: b.BaseFee(), Data: nil}), signer, acc1Key)
-		b.AddTx(tx)
+		// b.SetPoS()
 	})
 	api := NewBlockChainAPI(backend)
 
-	params := struct {
-		args        TransactionArgs
+	var suite = struct {
 		blockNumber rpc.BlockNumber
+		call        TransactionArgs
 	}{
-		args: TransactionArgs{
-			From:       &acc1Addr,
-			To:         &acc2Addr,
-			Value:      (*hexutil.Big)(big.NewInt(1)),
-			BlobHashes: []common.Hash{common.Hash{0x01, 0x22}},
-			BlobFeeCap: (*hexutil.Big)(big.NewInt(1)),
-		},
 		blockNumber: rpc.LatestBlockNumber,
+		call: TransactionArgs{
+			From:  &acc1Addr,
+			Input: hex2Bytes("6080604052348015600f57600080fd5b50483a1015601c57600080fd5b60003a111560315760004811603057600080fd5b5b603f80603e6000396000f3fe6080604052600080fdfea264697066735822122060729c2cee02b10748fae5200f1c9da4661963354973d9154c13a8e9ce9dee1564736f6c63430008130033"),
+		},
+	}
+	_, err := api.Call(context.Background(), suite.call, &rpc.BlockNumberOrHash{BlockNumber: &suite.blockNumber}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to call: %v\n", err)
 	}
 
-	// 1. Test Estimate gas
-	_, _ = api.EstimateGas(context.Background(), params.args, &rpc.BlockNumberOrHash{BlockNumber: &params.blockNumber}, nil)
-
+	// IsEthCall should be true
+	// IsGasEstimation should be false
+	require.True(t, backend.lastVmConfig.IsEthCall)
+	require.False(t, backend.lastVmConfig.IsGasEstimation)
 }
