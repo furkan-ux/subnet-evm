@@ -219,12 +219,14 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig
 	}
 
 	evm := &EVM{
-		Context:     blockCtx,
-		TxContext:   txCtx,
-		StateDB:     statedb,
-		Config:      config,
-		chainConfig: chainConfig,
-		chainRules:  chainConfig.Rules(blockCtx.BlockNumber, blockCtx.Time),
+		Context:         blockCtx,
+		TxContext:       txCtx,
+		StateDB:         statedb,
+		Config:          config,
+		chainConfig:     chainConfig,
+		chainRules:      chainConfig.Rules(blockCtx.BlockNumber, blockCtx.Time),
+		isEthCall:       config.IsEthCall,
+		isGasEstimation: config.IsGasEstimation,
 	}
 	evm.interpreter = NewEVMInterpreter(evm)
 	evm.dhevmStorage = NewDHEvmStorage(evm)
@@ -688,11 +690,6 @@ func (evm *EVM) GetChainConfig() precompileconfig.ChainConfig { return evm.chain
 func (evm *EVM) GetLoadedCiphertexts() map[common.Hash]*hpbfv.Ciphertext {
 	return evm.dhevmStorage.GetLoadedCiphertexts()
 }
-
-// // AddCiphertext implements AccessibleState
-// func (evm *EVM) AddCiphertext(ciphertext *hpbfv.Ciphertext) {
-// 	evm.dhevmStorage.AddCiphertext(ciphertext)
-// }
 
 func (evm *EVM) IsEthCall() bool {
 	return evm.interpreter.evm.isEthCall

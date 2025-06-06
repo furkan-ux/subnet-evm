@@ -441,6 +441,9 @@ type testBackend struct {
 	chain  *core.BlockChain
 	accman *accounts.Manager
 	acc    accounts.Account
+
+	// DHEVM
+	lastVmConfig vm.Config // spy for the last vm config for checking if the vm is eth call or gas estimation
 }
 
 func newTestBackend(t *testing.T, n int, gspec *core.Genesis, engine consensus.Engine, generator func(i int, b *core.BlockGen)) *testBackend {
@@ -560,6 +563,9 @@ func (b testBackend) GetReceipts(ctx context.Context, hash common.Hash) (types.R
 	return receipts, nil
 }
 func (b testBackend) GetEVM(ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockContext *vm.BlockContext) *vm.EVM {
+	// spy the vm config
+	b.lastVmConfig = *vmConfig
+
 	if vmConfig == nil {
 		vmConfig = b.chain.GetVMConfig()
 	}
@@ -2063,4 +2069,55 @@ func testRPCResponseWithFile(t *testing.T, testid int, result interface{}, rpc s
 		t.Fatalf("error reading expected test file: %s output: %v", outputFile, err)
 	}
 	require.JSONEqf(t, string(want), string(data), "test %d: json not match, want: %s, have: %s", testid, string(want), string(data))
+}
+
+func TestRPCDhevm(t *testing.T) {
+	t.Parallel()
+
+	var (
+		// 1. will to a estimate gas call and check if the vm config is correct
+		acc1Key, _ = crypto.HexToECDSA("8a1f9a8f95be41cd7ccb6168179afb4504aefe388d1e14474d32c45c72ce7b7a")
+		acc2Key, _ = crypto.HexToECDSA("49a7b37aa6f6645917e7b807e9d1c00d4fa71f18343b0d4122a4d2df64dd6fee")
+
+		acc1Addr = crypto.PubkeyToAddress(acc1Key.PublicKey)
+		acc2Addr = crypto.PubkeyToAddress(acc2Key.PublicKey)
+
+		genesis = &core.Genesis{
+			Config: params.TestChainConfig,
+			Alloc: types.GenesisAlloc{
+				acc1Addr: {Balance: big.NewInt(params.Ether)},
+				acc2Addr: {Balance: big.NewInt(params.Ether)},
+			},
+		}
+		signer = types.HomesteadSigner{}
+
+		genBlocks = 10
+	)
+
+	backend := newTestBackend(t, genBlocks, genesis, dummy.NewCoinbaseFaker(), func(i int, b *core.BlockGen) {
+		// Transfer from account[0] to account[1]
+		//    value: 1000 wei
+		//    fee:   0 wei
+		tx, _ := types.SignTx(types.NewTx(&types.LegacyTx{Nonce: uint64(i), To: &acc2Addr, Value: big.NewInt(1000), Gas: params.TxGas, GasPrice: b.BaseFee(), Data: nil}), signer, acc1Key)
+		b.AddTx(tx)
+	})
+	api := NewBlockChainAPI(backend)
+
+	params := struct {
+		args        TransactionArgs
+		blockNumber rpc.BlockNumber
+	}{
+		args: TransactionArgs{
+			From:       &acc1Addr,
+			To:         &acc2Addr,
+			Value:      (*hexutil.Big)(big.NewInt(1)),
+			BlobHashes: []common.Hash{common.Hash{0x01, 0x22}},
+			BlobFeeCap: (*hexutil.Big)(big.NewInt(1)),
+		},
+		blockNumber: rpc.LatestBlockNumber,
+	}
+
+	// 1. Test Estimate gas
+	_, _ = api.EstimateGas(context.Background(), params.args, &rpc.BlockNumberOrHash{BlockNumber: &params.blockNumber}, nil)
+
 }
