@@ -104,7 +104,14 @@ func (dhevm *DHEvmStorage) getMetadataFromStorage(ciphertextId common.Hash) *ctM
 }
 
 // inserts the ciphertext into the memory
-func (dhevm *DHEvmStorage) insertCiphertextToMemory(ciphertextId common.Hash, ct *hpbfv.Ciphertext) {
+func (dhevm *DHEvmStorage) insertCiphertextToMemory(ct *hpbfv.Ciphertext) (common.Hash, error) {
+	ciphertextId := GetCiphertextId(ct)
+	dhevm.insertCiphertextToMemoryWithId(ciphertextId, ct)
+	return ciphertextId, nil
+}
+
+// inserts the ciphertext into the memory
+func (dhevm *DHEvmStorage) insertCiphertextToMemoryWithId(ciphertextId common.Hash, ct *hpbfv.Ciphertext) {
 	dhevm.inMemoryCiphertexts[ciphertextId] = ct
 }
 
@@ -154,18 +161,10 @@ func (dhevm *DHEvmStorage) insertCiphertextToStorageWithId(ciphertextId common.H
 }
 
 // inserts the ciphertext into the storage
-func (dhevm *DHEvmStorage) insertCiphertextToStorage(ct *hpbfv.Ciphertext) error {
-	ctBytes, err := ct.MarshalBinary()
-	if err != nil {
-		return err
-	}
-
-	// cId = CRH(ct[:])
-	h := sha256.New()
-	h.Write(ctBytes)
-	ciphertextId := common.BytesToHash(h.Sum(nil))
+func (dhevm *DHEvmStorage) insertCiphertextToStorage(ct *hpbfv.Ciphertext) (common.Hash, error) {
+	ciphertextId := GetCiphertextId(ct)
 	dhevm.insertCiphertextToStorageWithId(ciphertextId, ct)
-	return nil
+	return ciphertextId, nil
 }
 
 // loads the ciphertext from the storage
@@ -211,7 +210,7 @@ func (dhevm *DHEvmStorage) loadCiphertext(ciphertextId common.Hash) (*hpbfv.Ciph
 		return nil, err
 	}
 
-	dhevm.insertCiphertextToMemory(ciphertextId, ct)
+	dhevm.insertCiphertextToMemoryWithId(ciphertextId, ct)
 
 	return ct, nil
 }
@@ -231,4 +230,13 @@ func (dhevm *DHEvmStorage) load2Ciphertexts(cId1, cId2 common.Hash) ([]*hpbfv.Ci
 	return out, nil
 }
 
-// tWY
+// gets the ciphertext id from the ciphertext
+func GetCiphertextId(ct *hpbfv.Ciphertext) common.Hash {
+	ctBytes, err := ct.MarshalBinary()
+	if err != nil {
+		return common.Hash{}
+	}
+	h := sha256.New()
+	h.Write(ctBytes)
+	return common.BytesToHash(h.Sum(nil))
+}

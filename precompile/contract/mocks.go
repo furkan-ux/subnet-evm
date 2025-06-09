@@ -174,6 +174,21 @@ func (mr *MockAccessibleStateMockRecorder) GetStateDB() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStateDB", reflect.TypeOf((*MockAccessibleState)(nil).GetStateDB))
 }
 
+// InsertToMemory mocks base method.
+func (m *MockAccessibleState) InsertToMemory(arg0 *hpbfv.Ciphertext) (common.Hash, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertToMemory", arg0)
+	ret0, _ := ret[0].(common.Hash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InsertToMemory indicates an expected call of InsertToMemory.
+func (mr *MockAccessibleStateMockRecorder) InsertToMemory(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertToMemory", reflect.TypeOf((*MockAccessibleState)(nil).InsertToMemory), arg0)
+}
+
 // IsCommitting mocks base method.
 func (m *MockAccessibleState) IsCommitting() bool {
 	m.ctrl.T.Helper()
@@ -233,9 +248,12 @@ func (mr *MockAccessibleStateMockRecorder) LoadCiphertext(arg0 interface{}) *gom
 }
 
 // StoreCiphertext mocks base method.
-func (m *MockAccessibleState) StoreCiphertext(arg0 *hpbfv.Ciphertext) {
+func (m *MockAccessibleState) StoreCiphertext(arg0 *hpbfv.Ciphertext) (common.Hash, error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StoreCiphertext", arg0)
+	ret := m.ctrl.Call(m, "StoreCiphertext", arg0)
+	ret0, _ := ret[0].(common.Hash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // StoreCiphertext indicates an expected call of StoreCiphertext.

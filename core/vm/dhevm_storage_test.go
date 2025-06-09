@@ -56,7 +56,7 @@ func TestDhevmStorage(t *testing.T) {
 		assert.NotNil(t, loadedCt)
 		assert.True(t, loadedCt.MetaData.Equal(ct.MetaData))
 
-		storage.insertCiphertextToMemory(testID, ct)
+		storage.insertCiphertextToMemoryWithId(testID, ct)
 		assert.True(t, storage.isCiphertextLoaded(testID))
 
 		memCt := storage.GetCiphertextFromMemory(testID)

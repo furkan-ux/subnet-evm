@@ -710,6 +710,11 @@ func (evm *EVM) Load2Ciphertexts(cId1, cId2 common.Hash) ([]*hpbfv.Ciphertext, e
 }
 
 // StoreCiphertext implements AccessibleState
-func (evm *EVM) StoreCiphertext(ciphertext *hpbfv.Ciphertext) {
-	evm.dhevmStorage.insertCiphertextToStorage(ciphertext)
+func (evm *EVM) StoreCiphertext(ciphertext *hpbfv.Ciphertext) (common.Hash, error) {
+	return evm.dhevmStorage.insertCiphertextToStorage(ciphertext)
+}
+
+// InsertToMemory implements AccessibleState
+func (evm *EVM) InsertToMemory(ciphertext *hpbfv.Ciphertext) (common.Hash, error) {
+	return evm.dhevmStorage.insertCiphertextToMemory(ciphertext)
 }

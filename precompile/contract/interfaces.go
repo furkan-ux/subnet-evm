@@ -56,7 +56,8 @@ type AccessibleState interface {
 	LoadCiphertext(ciphertextId common.Hash) (*hpbfv.Ciphertext, error)
 	Load2Ciphertexts(cId1, cId2 common.Hash) ([]*hpbfv.Ciphertext, error)
 
-	StoreCiphertext(ciphertext *hpbfv.Ciphertext)
+	StoreCiphertext(ciphertext *hpbfv.Ciphertext) (common.Hash, error)
+	InsertToMemory(ciphertext *hpbfv.Ciphertext) (common.Hash, error)
 
 	IsEthCall() bool
 	IsCommitting() bool
