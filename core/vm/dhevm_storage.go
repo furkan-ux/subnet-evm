@@ -116,9 +116,9 @@ func (dhevm *DHEvmStorage) insertCiphertextToMemoryWithId(ciphertextId common.Ha
 }
 
 // inserts the ciphertext into the storage with a given id
-func (dhevm *DHEvmStorage) insertCiphertextToStorageWithId(ciphertextId common.Hash, ct *hpbfv.Ciphertext) {
+func (dhevm *DHEvmStorage) insertCiphertextToStorageWithId(ciphertextId common.Hash, ct *hpbfv.Ciphertext) error {
 	if dhevm.isCiphertextPersisted(ciphertextId) {
-		return
+		return nil
 	}
 
 	metadata := &ctMetadata{}
@@ -136,6 +136,7 @@ func (dhevm *DHEvmStorage) insertCiphertextToStorageWithId(ciphertextId common.H
 		log.Printf("e1rr: %v\n", err)
 		// ! Need to handle properly
 		// panic(err)
+		return err
 	}
 
 	ctChunk := make([]byte, 32)
@@ -158,13 +159,14 @@ func (dhevm *DHEvmStorage) insertCiphertextToStorageWithId(ciphertextId common.H
 	if len(ctChunk) != 0 {
 		dhevm.evm.StateDB.SetState(DHEvmStorageAddress, initialSlot.Bytes32(), common.BytesToHash(ctChunk))
 	}
+	return nil
 }
 
 // inserts the ciphertext into the storage
 func (dhevm *DHEvmStorage) insertCiphertextToStorage(ct *hpbfv.Ciphertext) (common.Hash, error) {
 	ciphertextId := GetCiphertextId(ct)
-	dhevm.insertCiphertextToStorageWithId(ciphertextId, ct)
-	return ciphertextId, nil
+	err := dhevm.insertCiphertextToStorageWithId(ciphertextId, ct)
+	return ciphertextId, err
 }
 
 // loads the ciphertext from the storage

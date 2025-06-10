@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"math/big"
 	"testing"
@@ -52,9 +53,17 @@ func TestDhevmStorage(t *testing.T) {
 		assert.Greater(t, metadata.chunks, uint64(0))
 
 		loadedCt, err := storage.loadCiphertext(testID)
+		loaddedctbytes, err := loadedCt.MarshalBinary()
+		if err != nil {
+			t.Fatal(err)
+		}
+		ctbytes, err := ct.MarshalBinary()
+		if err != nil {
+			t.Fatal(err)
+		}
 		assert.NoError(t, err)
 		assert.NotNil(t, loadedCt)
-		assert.True(t, loadedCt.MetaData.Equal(ct.MetaData))
+		assert.True(t, bytes.Equal(loaddedctbytes, ctbytes))
 
 		storage.insertCiphertextToMemoryWithId(testID, ct)
 		assert.True(t, storage.isCiphertextLoaded(testID))
