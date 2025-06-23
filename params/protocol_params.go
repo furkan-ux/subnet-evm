@@ -37,8 +37,8 @@ const (
 	MinGasLimit          uint64 = 5000               // Minimum the gas limit may ever be.
 	MaxGasLimit          uint64 = 0x7fffffffffffffff // Maximum the gas limit (2^63-1).
 	GenesisGasLimit      uint64 = 4712388            // Gas limit of the Genesis block.
+	MaximumExtraDataSize uint64 = 64                 // Maximum size extra data may be after Genesis.
 
-	MaximumExtraDataSize  uint64 = 64    // Maximum size extra data may be after Genesis.
 	ExpByteGas            uint64 = 10    // Times ceil(log256(exponent)) for the EXP instruction.
 	SloadGas              uint64 = 50    // Multiplied by the number of 32-byte words that are copied (round up) for any *COPY operation and added.
 	CallValueTransferGas  uint64 = 9000  // Paid for CALL when the value transfer is non-zero.
@@ -54,15 +54,15 @@ const (
 	Keccak256WordGas uint64 = 6  // Once per word of the KECCAK256 operation's data.
 	InitCodeWordGas  uint64 = 2  // Once per word of the init code when creating a contract.
 
-	SstoreSetGas    uint64 = 100   // Once per SSTORE operation.
+	SstoreSetGas    uint64 = 20000 // Once per SSTORE operation.
 	SstoreResetGas  uint64 = 5000  // Once per SSTORE operation if the zeroness changes from zero.
 	SstoreClearGas  uint64 = 5000  // Once per SSTORE operation if the zeroness doesn't change.
 	SstoreRefundGas uint64 = 15000 // Once per SSTORE operation if the zeroness changes to zero.
 
-	NetSstoreNoopGas  uint64 = 200 // Once per SSTORE operation if the value doesn't change.
-	NetSstoreInitGas  uint64 = 100 // Once per SSTORE operation from clean zero.
-	NetSstoreCleanGas uint64 = 100 // Once per SSTORE operation from clean non-zero.
-	NetSstoreDirtyGas uint64 = 200 // Once per SSTORE operation from dirty.
+	NetSstoreNoopGas  uint64 = 200   // Once per SSTORE operation if the value doesn't change.
+	NetSstoreInitGas  uint64 = 20000 // Once per SSTORE operation from clean zero.
+	NetSstoreCleanGas uint64 = 5000  // Once per SSTORE operation from clean non-zero.
+	NetSstoreDirtyGas uint64 = 200   // Once per SSTORE operation from dirty.
 
 	NetSstoreClearRefund      uint64 = 15000 // Once per SSTORE operation for clearing an originally existing storage slot
 	NetSstoreResetRefund      uint64 = 4800  // Once per SSTORE operation for resetting to the original non-zero value
@@ -74,7 +74,7 @@ const (
 	SstoreClearsScheduleRefundEIP2200 uint64 = 15000 // Once per SSTORE operation for clearing an originally existing storage slot
 
 	ColdAccountAccessCostEIP2929 = uint64(2600) // COLD_ACCOUNT_ACCESS_COST
-	ColdSloadCostEIP2929         = uint64(1)    // COLD_SLOAD_COST
+	ColdSloadCostEIP2929         = uint64(2100) // COLD_SLOAD_COST
 	WarmStorageReadCostEIP2929   = uint64(100)  // WARM_STORAGE_READ_COST
 
 	// In EIP-2200: SstoreResetGas was 5000.
