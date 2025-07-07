@@ -33,6 +33,7 @@ import (
 	"github.com/ava-labs/subnet-evm/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/holiman/uint256"
 )
 
@@ -536,7 +537,12 @@ func opSstore(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]b
 	if newValueHash != oldValueHash && interpreter.evm.IsCommitting() {
 		ct := interpreter.evm.dhevmStorage.GetCiphertextFromMemory(newValueHash)
 		if ct != nil {
-			interpreter.evm.dhevmStorage.insertCiphertextToStorage(ct)
+			cid, err := interpreter.evm.dhevmStorage.insertCiphertextToStorage(ct)
+			if err != nil {
+				log.Error("Failed to insert ciphertext to storage", "err", err)
+			} else {
+				log.Info("Ciphertext inserted to storage", "ciphertextId", cid.Hex())
+			}
 		}
 	}
 

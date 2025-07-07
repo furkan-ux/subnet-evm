@@ -2,10 +2,10 @@ package vm
 
 import (
 	"crypto/sha256"
-	"log"
 
 	"github.com/ava-labs/dhe-core/hpbfv"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/holiman/uint256"
 )
 
@@ -48,6 +48,7 @@ type DHEvmStorage struct {
 }
 
 func NewDHEvmStorage(evm *EVM) *DHEvmStorage {
+	log.Info("Creating new DHEvmStorage instance with params", "params", hpbfv.DHEN13D7T1024)
 	params := hpbfv.NewParametersFromLiteral(hpbfv.DHEN13D7T1024)
 	return &DHEvmStorage{
 		evm:                 evm,
@@ -58,7 +59,9 @@ func NewDHEvmStorage(evm *EVM) *DHEvmStorage {
 
 // gets the ciphertext from the memory
 func (dhevm *DHEvmStorage) GetCiphertextFromMemory(ciphertextId common.Hash) *hpbfv.Ciphertext {
+	log.Info("Getting ciphertext from memory", "ciphertextId", ciphertextId)
 	if ct, ok := dhevm.inMemoryCiphertexts[ciphertextId]; ok {
+		log.Info("Ciphertext found in memory", "ciphertextId", ciphertextId)
 		return ct
 	}
 	return nil
@@ -71,11 +74,14 @@ func (dhevm *DHEvmStorage) GetLoadedCiphertexts() map[common.Hash]*hpbfv.Ciphert
 // checks if the ciphertext is persisted in the storage
 func (dhevm *DHEvmStorage) isCiphertextPersisted(ciphertextId common.Hash) bool {
 	metadataInt := uint256.NewInt(0).SetBytes(dhevm.evm.StateDB.GetState(DHEvmStorageAddress, ciphertextId).Bytes())
-	return !metadataInt.IsZero()
+	isPersisted := !metadataInt.IsZero()
+	log.Info("Checking if ciphertext is persisted", "ciphertextId", ciphertextId, "isPersisted", isPersisted)
+	return isPersisted
 }
 
 // checks if the ciphertext is loaded in memory
 func (dhevm *DHEvmStorage) isCiphertextLoaded(ciphertextId common.Hash) bool {
+	log.Info("Checking if ciphertext is loaded", "ciphertextId", ciphertextId)
 	return dhevm.inMemoryCiphertexts[ciphertextId] != nil
 }
 
@@ -112,6 +118,7 @@ func (dhevm *DHEvmStorage) insertCiphertextToMemory(ct *hpbfv.Ciphertext) (commo
 
 // inserts the ciphertext into the memory
 func (dhevm *DHEvmStorage) insertCiphertextToMemoryWithId(ciphertextId common.Hash, ct *hpbfv.Ciphertext) {
+	log.Info("Inserting ciphertext to memory", "ciphertextId", ciphertextId)
 	dhevm.inMemoryCiphertexts[ciphertextId] = ct
 }
 
@@ -133,9 +140,7 @@ func (dhevm *DHEvmStorage) insertCiphertextToStorageWithId(ciphertextId common.H
 
 	ctBytes, err := ct.MarshalBinary()
 	if err != nil {
-		log.Printf("e1rr: %v\n", err)
-		// ! Need to handle properly
-		// panic(err)
+		log.Error("Error marshalling ciphertext", "err", err)
 		return err
 	}
 
@@ -165,12 +170,14 @@ func (dhevm *DHEvmStorage) insertCiphertextToStorageWithId(ciphertextId common.H
 // inserts the ciphertext into the storage
 func (dhevm *DHEvmStorage) insertCiphertextToStorage(ct *hpbfv.Ciphertext) (common.Hash, error) {
 	ciphertextId := GetCiphertextId(ct)
+	log.Info("Inserting ciphertext to storage", "ciphertextId", ciphertextId)
 	err := dhevm.insertCiphertextToStorageWithId(ciphertextId, ct)
 	return ciphertextId, err
 }
 
 // loads the ciphertext from the storage
 func (dhevm *DHEvmStorage) loadCiphertext(ciphertextId common.Hash) (*hpbfv.Ciphertext, error) {
+	log.Info("Loading ciphertext from storage", "ciphertextId", ciphertextId)
 	metadata := dhevm.loadCiphertextMetadata(ciphertextId)
 	if metadata == nil {
 		return nil, nil
@@ -219,6 +226,7 @@ func (dhevm *DHEvmStorage) loadCiphertext(ciphertextId common.Hash) (*hpbfv.Ciph
 
 // loads 2 ciphertexts from the storage
 func (dhevm *DHEvmStorage) load2Ciphertexts(cId1, cId2 common.Hash) ([]*hpbfv.Ciphertext, error) {
+	log.Info("Loading 2 ciphertexts from storage", "cId1", cId1, "cId2", cId2)
 	out := make([]*hpbfv.Ciphertext, 2)
 
 	for i, ciphertextId := range []common.Hash{cId1, cId2} {
