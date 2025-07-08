@@ -691,12 +691,14 @@ func (evm *EVM) GetLoadedCiphertexts() map[common.Hash]*hpbfv.Ciphertext {
 	return evm.dhevmStorage.GetLoadedCiphertexts()
 }
 
+// IsEthCall returns true if the EVM is in an eth_call state, false otherwise
 func (evm *EVM) IsEthCall() bool {
-	return evm.interpreter.evm.isEthCall
+	return evm.isEthCall
 }
 
+// IsCommitting returns true if the EVM is in a committing state, false otherwise
 func (evm *EVM) IsCommitting() bool {
-	return !evm.interpreter.evm.isGasEstimation
+	return !evm.isGasEstimation
 }
 
 // LoadCiphertext implements AccessibleState
